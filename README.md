@@ -8,7 +8,8 @@
 
 - 织架与踏板对照 `looms`，字段为 `machine`（机型）、`pedal_count`（踏板数）、`mapping_signed`（脚位映射已签）。模型约束位于 `backend/domain/looms_model.py`，规则位于 `looms_service.py`。
 - 动作样段 `segments`，字段为 `loom`（织架）、`pattern`（物料纹样）、`right_rate`（右脚频次）、`left_rate`（左脚频次）、`pause`（踏间停顿 s）、`checked`（已对拍）。模型约束位于 `backend/domain/segments_model.py`，规则位于 `segments_service.py`。
-- 判别纠混签注 `axes`，字段为 `segment`（待辨动作）、`suggestion`（判别纹样）、`confidence`（模型概率）、`holdout`（留出正确率）、`token`（计算号）。模型约束位于 `backend/domain/axes_model.py`，规则位于 `axes_service.py`。
+- 判别纠混签注 `axes`，字段为 `segment`（待辨动作）、`suggestion`（判别纹样）、`confidence`（模型概率）、`holdout`（留出正确率）、`token`（计算号），以及借用留痕 `model_loom`（判别所用模型来自哪台织架，同台时即本架）、`calibration_version`/`calibration`（所用校准版次）。模型约束位于 `backend/domain/axes_model.py`，规则位于 `axes_service.py`。
+- 校准借用 `calibrations`，字段为 `code`（校准版次号）、`loom`（借用模型的新织架）、`source_loom`（借出模型织架，方向相反须另立校准重验）、`version`/`revision`（同织架提交版次）、`token`（计算号）、`state`、`active`、`right_factor`/`left_factor`/`pause_factor`（目标织架读数换算到来源模型坐标的系数）、`accuracies`（平纹/斜纹/缎纹各自验收正确率）。成对动作留痕于 `calibration_pairs`，样段也可用共享 `pair`/`pair_code` 组号成对。模型约束位于 `backend/domain/calibrations_model.py`，规则位于 `calibrations_service.py`，算子位于 `calibrations_learning.py`。
 - 课堂示范册 `lesson_demos`，字段为 `axis`（判别依据）、`loom`（示范织架）、`lesson`（节次）、`state`（状态）。模型约束位于 `backend/domain/lesson_demos_model.py`，规则位于 `lesson_demos_service.py`。
 
 团队为模拟的4 人工艺课堂，维护多架手摇织机的工艺教学例片。
@@ -54,6 +55,7 @@ Compose 运行 Nginx、Python FastAPI、独立 Redis 消费进程、SQL 数据�
 | 织架与踏板对照 | `/looms` /looms/sign-mapping | `frontend/src/pages/looms.js` |
 | 动作样段 | `/segments` /segments/record-segment，/segments/verify-segment | `frontend/src/pages/segments.js` |
 | 判别纠混签注 | `/axes` /axes/fit-axes，/axes/record-axis | `frontend/src/pages/axes.js` |
+| 校准与外台模型借用 | `/calibrations` /calibrations/submit-calibration，/calibrations/accept-calibration；来源查询 `/workbench/provenance?axis=AX-01` | `frontend/src/pages/calibrations.js` |
 | 课堂示范册 | `/lesson_demos` /lesson_demos/replace-demo，/lesson_demos/restore-demo | `frontend/src/pages/lesson_demos.js` |
 
 SQL 实体与约束在 `backend/domain` 下维护。前端使用原生 ES modules。核心算子为 LinearDiscriminantAnalysis。训练集上拟合 StandardScaler 与 LDA。按纹样分层留出 1/3，固定随机种子 24，返回二维坐标和模型分值。

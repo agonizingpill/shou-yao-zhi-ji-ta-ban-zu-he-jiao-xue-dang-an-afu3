@@ -13,7 +13,16 @@ def record_segment(conn, user, data):
     need(data.pattern in ('平纹','斜纹','缎纹'), '须选用三种课堂纹样词表')
     need(0 <= data.right_rate <= 10 and 0 <= data.left_rate <= 10 and .1 <= data.pause <= 5,
          '课上踏板频次或停顿超出记录范围')
-    return insert(conn, segments, **data.model_dump(), checked=False)
+    payload = data.model_dump()
+    pair_value = payload.get('pair') or payload.get('pair_code') or payload.get('pair_id') \
+        or payload.get('pair_group')
+    if pair_value is not None:
+        pair_value = str(pair_value)
+    # 只写物理列，忽略对接方附加的非表字段；pair 与 pair_code 同步留痕。
+    values = {key: value for key, value in payload.items()
+              if key in segments.c.keys() and key not in ('pair', 'pair_code')}
+    values.update(checked=False, pair=pair_value, pair_code=pair_value)
+    return insert(conn, segments, **values)
 
 
 def verify_segment(conn, user, data):

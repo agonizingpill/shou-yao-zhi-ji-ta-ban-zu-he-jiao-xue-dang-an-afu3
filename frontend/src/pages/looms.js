@@ -23,6 +23,10 @@
     {
       "name": "mapping_signed",
       "label": "脚位映射已签"
+    },
+    {
+      "name": "active_calibration",
+      "label": "当前模型/换算版本"
     }
   ],
   "layout": "flip",

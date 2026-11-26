@@ -16,6 +16,8 @@ from scripts.seed_demo import seed
 async def lifespan(app):
     from core.db import engine
     metadata.create_all(engine)
+    from core.migrate import upgrade
+    upgrade()
     if SEED_DEMO:
         try:
             seed()

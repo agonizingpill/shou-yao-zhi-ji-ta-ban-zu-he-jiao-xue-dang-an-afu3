@@ -6,7 +6,7 @@ from core.db import transaction
 from core.records import scan
 from domain import looms_service as service
 from domain.looms_model import looms
-from domain.looms_schemas import SignMapping
+from domain.looms_schemas import RecordLoom, SignMapping
 
 router = APIRouter()
 
@@ -23,3 +23,15 @@ def sign_mapping(data: SignMapping, user=Depends(actor)):
         output = service.sign_mapping(conn, user, data)
         record(conn, user, 'looms.sign_mapping')
         return output
+
+
+def record_loom(data: RecordLoom, user=Depends(actor)):
+    allow(user, ('operator', 'reviewer'))
+    with transaction() as conn:
+        output = service.record_loom(conn, user, data)
+        record(conn, user, 'looms.record_loom')
+        return output
+
+
+for _path in ('/looms/create-loom', '/looms/record-loom', '/looms/add-loom', '/looms/new-loom'):
+    router.add_api_route(_path, record_loom, methods=['POST'])
